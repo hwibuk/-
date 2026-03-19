@@ -6,6 +6,10 @@ const mapTitle = document.getElementById('map-title');
 
 let currentFloor = '1F';
 
+// [추가] 로봇의 실시간 위치를 저장할 변수 (초기값은 중앙)
+let robotPos = { x: 0, y: 0 };
+let isInitialPos = true; // 처음 실행 시 중앙에 배치하기 위한 플래그
+
 // 층별 도면 데이터 (주차장, 로비, 사무실 등 구분)
 const layouts = {
     parking: [{x: 80, y: 50, w: 300, h: 40}, {x: 450, y: 50, w: 300, h: 40}, {x: 80, y: 200, w: 300, h: 40}, {x: 450, y: 200, w: 300, h: 40}],
@@ -26,6 +30,14 @@ const floorData = {
 function resizeCanvas() {
     canvas.width = mapContainer.clientWidth;
     canvas.height = mapContainer.clientHeight;
+
+    // [추가] 리사이즈 시 초기 위치 설정 (한 번만 실행)
+    if (isInitialPos) {
+        robotPos.x = canvas.width / 2;
+        robotPos.y = canvas.height / 2;
+        isInitialPos = false;
+    }
+
     drawMap();
 }
 window.addEventListener('resize', resizeCanvas);
@@ -38,14 +50,22 @@ function drawMap() {
     for (let i = 0; i < canvas.height; i += 30) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke(); }
     // 외벽
     ctx.strokeStyle = '#2c3e50'; ctx.lineWidth = 5;
-    ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40); 
+    ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
     // 내부 벽
     const obstacles = floorData[currentFloor] || layouts.lobby;
     ctx.fillStyle = '#95a5a6';
     obstacles.forEach(obs => ctx.fillRect(obs.x, obs.y, obs.w, obs.h));
-    // 로봇
+
+    // 로봇 (기존 고정 좌표 대신 robotPos.x, robotPos.y 사용으로 변경)
     ctx.font = '24px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.fillText('🤖', canvas.width / 2, canvas.height / 2);
+    ctx.fillText('🤖', robotPos.x, robotPos.y);
+}
+
+// [추가] dashboard.js에서 호출할 위치 업데이트 함수
+function updateRobotPosition(x, y) {
+    robotPos.x = x;
+    robotPos.y = y;
+    drawMap();
 }
 
 // ★ 층수 클릭 시 로그 초기화 연동
@@ -61,7 +81,7 @@ floorItems.forEach(item => {
         drawMap();
 
         // 1. 로그를 싹 지웁니다.
-        clearLog(); 
+        clearLog();
         // 2. 초기화 완료 로그를 한 줄 남깁니다.
         addLog('정상', `[${currentFloor}] 층 시스템 초기화 완료`);
     });

@@ -6,7 +6,7 @@
 async function updateRealtimeDashboard() {
     try {
         // 1. Flask API 호출 (팀원이 만들 엔드포인트)
-        const response = await fetch('/api/status');
+        const response = await fetch('/api/robot/status');
 
         if (!response.ok) {
             console.warn("서버 응답 없음: Flask가 실행 중인지 확인하세요.");
@@ -14,6 +14,11 @@ async function updateRealtimeDashboard() {
         }
 
         const data = await response.json();
+
+        // [추가된 부분] map_engine.js의 로봇 위치 업데이트 함수 호출
+        if (typeof updateRobotPosition === 'function') {
+            updateRobotPosition(data.location.x, data.location.y);
+        }
 
         // 2. [Robot Info] 영역 업데이트
         if (document.getElementById('robot-id'))
